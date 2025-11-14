@@ -16,7 +16,7 @@ def test_pmo_generator_initialization():
     try:
         agent = PMOReportGenerator(api_key="test-key")
         assert agent.api_key == "test-key"
-        assert agent.model == "anthropic/claude-3.5-haiku"
+        assert agent.model == "anthropic/haiku-4.5"
     except ValueError:
         pass
 

@@ -29,7 +29,7 @@ class MeetingAssistant:
             raise ValueError("OpenRouter API key is required. Set OPENROUTER_API_KEY environment variable.")
         
         self.api_endpoint = "https://openrouter.ai/api/v1/chat/completions"
-        self.model = "anthropic/claude-3.5-haiku"
+        self.model = os.getenv("OPENROUTER_MODEL", "anthropic/haiku-4.5")
         self.max_retries = 3
         
     def process_meeting(self, meeting_data: Dict) -> Dict:

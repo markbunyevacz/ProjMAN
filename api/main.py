@@ -18,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agents.meeting_assistant import MeetingAssistant
 from agents.pmo_report_generator import PMOReportGenerator
+from core.database import DatabaseService
+from core.integrations import JiraIntegration, EmailService, TeamsIntegration
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
@@ -42,11 +44,16 @@ app.add_middleware(
 # Request/Response models
 class MeetingProcessRequest(BaseModel):
     meeting_id: str = Field(..., description="Unique meeting identifier")
-    transcript: str = Field(..., description="Meeting transcript text")
-    participants: List[str] = Field(..., description="List of participant emails")
+    transcript: Optional[str] = Field(None, description="Meeting transcript text")
+    participants: List[str] = Field(default_factory=list, description="List of participant emails")
     meeting_title: str = Field(..., description="Title of the meeting")
     meeting_date: str = Field(..., description="ISO format date string")
+    teams_meeting_id: Optional[str] = Field(
+        default=None,
+        description="Microsoft Teams meeting ID (optional - transcript fetch)"
+    )
     create_jira_tickets: bool = Field(default=False, description="Create Jira tickets for action items")
+    send_email_notifications: bool = Field(default=True, description="Send meeting minutes via email")
 
 class ReportGenerateRequest(BaseModel):
     report_type: str = Field(..., description="Report type: weekly, monthly, quarterly")
@@ -81,13 +88,24 @@ async def process_meeting(request: MeetingProcessRequest, background_tasks: Back
     try:
         logger.info(f"Processing meeting: {request.meeting_id}")
         
-        # Initialize agent
+        # Initialize services
         agent = MeetingAssistant()
+        jira_service = JiraIntegration()
+        email_service = EmailService()
+        teams_service = TeamsIntegration()
+        db_service = None
+        transcript = request.transcript
         
+        if not transcript and request.teams_meeting_id:
+            transcript = teams_service.get_meeting_transcript(request.teams_meeting_id)
+
+        if not transcript:
+            raise HTTPException(status_code=400, detail="Transcript is required (provide text or teams_meeting_id)")
+
         # Prepare meeting data
         meeting_data = {
             "meeting_id": request.meeting_id,
-            "transcript": request.transcript,
+            "transcript": transcript,
             "participants": request.participants,
             "meeting_title": request.meeting_title,
             "meeting_date": request.meeting_date,
@@ -98,10 +116,40 @@ async def process_meeting(request: MeetingProcessRequest, background_tasks: Back
         minutes = agent.process_meeting(meeting_data)
         
         # Generate email notification (HTML)
-        email_html = agent.generate_email_notification(minutes, request.participants[0] if request.participants else "")
-        
+        email_html = agent.generate_email_notification(
+            minutes,
+            request.participants[0] if request.participants else ""
+        )
+
         # Export to Jira format
         jira_tickets = agent.export_to_jira_format(minutes)
+
+        # Optional database save
+        meeting_record_id = None
+        try:
+            db_service = DatabaseService()
+            meeting_record_id = db_service.save_meeting(meeting_data, minutes)
+        except Exception as db_error:
+            logger.warning(f"Database save skipped: {db_error}")
+        finally:
+            if db_service:
+                db_service.close()
+
+        # Optional Jira ticket creation
+        created_jira_ids: List[Optional[str]] = []
+        if request.create_jira_tickets:
+            created_jira_ids = jira_service.create_tickets_bulk(minutes.get("action_items", []))
+
+        # Optional email notifications
+        email_sent = False
+        if request.participants and request.send_email_notifications:
+            subject = f"Meeting Minutes - {request.meeting_title}"
+            email_sent = email_service.send_email(
+                request.participants,
+                subject,
+                email_html,
+                minutes.get("summary", "")
+            )
         
         logger.info(f"Meeting {request.meeting_id} processed successfully")
         
@@ -110,7 +158,10 @@ async def process_meeting(request: MeetingProcessRequest, background_tasks: Back
             "status": "completed",
             "minutes": minutes,
             "email_html": email_html,
-            "jira_tickets": jira_tickets
+            "jira_tickets": jira_tickets,
+            "created_jira_ids": created_jira_ids,
+            "email_sent": email_sent,
+            "meeting_record_id": meeting_record_id
         }
         
     except ValueError as e:
@@ -149,6 +200,9 @@ async def generate_report(request: ReportGenerateRequest, background_tasks: Back
         
         # Initialize agent
         agent = PMOReportGenerator()
+        jira_service = JiraIntegration()
+        email_service = EmailService()
+        db_service = None
         
         # Prepare project data
         # Note: This is a simplified version. Full implementation should fetch from Jira API
@@ -161,7 +215,12 @@ async def generate_report(request: ReportGenerateRequest, background_tasks: Back
             "report_type": request.report_type
         }
         
-        # For demo purposes, use demo data if no projects provided
+        # Fetch Jira data if project keys provided
+        if request.jira_projects:
+            fetched_projects = jira_service.fetch_project_data(request.jira_projects)
+            project_data["projects"] = fetched_projects
+
+        # For demo purposes, use demo data if still no projects provided
         if not project_data["projects"]:
             demo_data_path = Path(__file__).parent.parent / "demo_data" / "jira_demo_data.json"
             if demo_data_path.exists():
@@ -179,6 +238,38 @@ async def generate_report(request: ReportGenerateRequest, background_tasks: Back
         
         # Generate Excel format
         excel_format = agent.export_to_excel_format(report)
+
+        # Optional database save
+        report_record_id = None
+        try:
+            db_service = DatabaseService()
+            report_record_id = db_service.save_report(
+                {
+                    "report_type": request.report_type,
+                    "period": {
+                        "start": request.period_start,
+                        "end": request.period_end
+                    }
+                },
+                report
+            )
+        except Exception as db_error:
+            logger.warning(f"Report database save skipped: {db_error}")
+        finally:
+            if db_service:
+                db_service.close()
+
+        # Optional email distribution
+        email_sent = False
+        if request.recipients:
+            subject = f"PMO Report - {request.report_type.title()} ({request.period_start} → {request.period_end})"
+            summary_text = report.get("executive_summary", {}).get("overview", "")
+            email_sent = email_service.send_email(
+                request.recipients,
+                subject,
+                html_report,
+                summary_text
+            )
         
         logger.info(f"Report generated successfully")
         
@@ -187,7 +278,9 @@ async def generate_report(request: ReportGenerateRequest, background_tasks: Back
             "status": "completed",
             "report": report,
             "html_report": html_report,
-            "excel_format": excel_format
+            "excel_format": excel_format,
+            "report_record_id": report_record_id,
+            "email_sent": email_sent
         }
         
     except ValueError as e:

@@ -17,7 +17,7 @@ def test_meeting_assistant_initialization():
     try:
         agent = MeetingAssistant(api_key="test-key")
         assert agent.api_key == "test-key"
-        assert agent.model == "anthropic/claude-3.5-haiku"
+        assert agent.model == "anthropic/haiku-4.5"
     except ValueError:
         # Expected if no API key
         pass

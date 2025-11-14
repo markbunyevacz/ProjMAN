@@ -938,9 +938,161 @@ export SENTRY_DSN="https://..."
 
 ---
 
-## 10. Troubleshooting
+## 10. Cloud Deployment
 
-### 10.1 Common Issues
+### 10.1 Docker Image Build
+
+Build the Docker image locally:
+
+```bash
+# Build image
+docker build -t projman-ai:latest .
+
+# Verify image
+docker images | grep projman-ai
+```
+
+### 10.2 Push to Container Registry
+
+**Docker Hub:**
+```bash
+# Login to Docker Hub
+docker login
+
+# Tag image
+docker tag projman-ai:latest your-username/projman-ai:latest
+
+# Push to Docker Hub
+docker push your-username/projman-ai:latest
+```
+
+**AWS ECR:**
+```bash
+# Login to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+
+# Create repository (if not exists)
+aws ecr create-repository --repository-name projman-ai --region us-east-1
+
+# Tag and push
+docker tag projman-ai:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/projman-ai:latest
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/projman-ai:latest
+```
+
+**Azure Container Registry (ACR):**
+```bash
+# Login to ACR
+az acr login --name <registry-name>
+
+# Tag and push
+docker tag projman-ai:latest <registry-name>.azurecr.io/projman-ai:latest
+docker push <registry-name>.azurecr.io/projman-ai:latest
+```
+
+**Google Container Registry (GCR):**
+```bash
+# Configure Docker for GCR
+gcloud auth configure-docker
+
+# Tag and push
+docker tag projman-ai:latest gcr.io/<project-id>/projman-ai:latest
+docker push gcr.io/<project-id>/projman-ai:latest
+```
+
+### 10.3 Cloud Platform Deployment
+
+**AWS ECS / Fargate:**
+- Use the pushed ECR image in your task definition
+- Set environment variables via Secrets Manager or Parameter Store
+- Configure load balancer on port 8000
+
+**Azure App Service / Container Apps:**
+- Deploy from ACR image
+- Set environment variables in Configuration → Application Settings
+- Use Azure Key Vault for secrets
+
+**GCP Cloud Run:**
+```bash
+gcloud run deploy projman-ai \
+  --image gcr.io/<project-id>/projman-ai:latest \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-secrets="OPENROUTER_API_KEY=openrouter-key:latest" \
+  --set-env-vars="OPENROUTER_MODEL=anthropic/haiku-4.5"
+```
+
+**Kubernetes:**
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: projman-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: projman-ai
+  template:
+    metadata:
+      labels:
+        app: projman-ai
+    spec:
+      containers:
+      - name: projman-ai
+        image: your-registry/projman-ai:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: projman-secrets
+              key: openrouter-api-key
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: projman-secrets
+              key: database-url
+```
+
+### 10.4 Required Environment Variables (Cloud)
+
+**Required:**
+- `OPENROUTER_API_KEY` - Must be set via cloud secret store
+- `OPENROUTER_MODEL=anthropic/haiku-4.5` (default)
+
+**Optional (for full functionality):**
+- `DATABASE_URL` - PostgreSQL connection string
+- `REDIS_URL` - Redis connection string
+- `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET` - S3/MinIO storage
+- `JIRA_URL`, `JIRA_API_TOKEN`, `JIRA_PROJECT_KEY` - Jira integration
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` - Email sending
+- `TEAMS_CLIENT_ID`, `TEAMS_CLIENT_SECRET`, `TEAMS_TENANT_ID` - Teams integration
+
+**Security Best Practices:**
+- Never commit secrets to version control
+- Use cloud secret management services (AWS Secrets Manager, Azure Key Vault, GCP Secret Manager)
+- Rotate secrets regularly
+- Use least-privilege IAM roles
+
+### 10.5 Health Check
+
+After deployment, verify the service:
+
+```bash
+# Health check endpoint
+curl https://your-domain/health
+
+# Expected response:
+# {"status":"healthy","version":"1.0.0","services":{"database":"connected","redis":"connected"}}
+```
+
+---
+
+## 11. Troubleshooting
+
+### 11.1 Common Issues
 
 **Issue: "OpenRouter API key is required"**
 - **Cause:** API key not set
@@ -958,7 +1110,7 @@ export SENTRY_DSN="https://..."
 - **Cause:** API returned non-JSON content
 - **Solution:** Check API status, verify model availability
 
-### 10.2 Debug Mode
+### 11.2 Debug Mode
 
 Enable debug logging:
 ```python
@@ -970,7 +1122,7 @@ logger = logging.getLogger(__name__)
 # Your code here
 ```
 
-### 10.3 Support Resources
+### 11.3 Support Resources
 
 - **Documentation:** `/docs` directory
 - **Demo Data:** `/demo_data` directory

@@ -20,6 +20,7 @@ class JiraIntegration:
         self.jira_url = os.getenv("JIRA_URL", "https://yourcompany.atlassian.net")
         self.api_token = os.getenv("JIRA_API_TOKEN")
         self.project_key = os.getenv("JIRA_PROJECT_KEY", "PROJ")
+        self.email = os.getenv("JIRA_EMAIL")  # optional - for basic auth
         
         if not self.api_token:
             logger.warning("JIRA_API_TOKEN not set. Jira integration will not work.")
@@ -93,6 +94,40 @@ class JiraIntegration:
             ticket_id = self.create_ticket(item)
             ticket_ids.append(ticket_id)
         return ticket_ids
+    
+    def fetch_project_data(self, project_keys: List[str]) -> List[Dict]:
+        """Fetch basic project metrics from Jira"""
+        if not self.api_token:
+            logger.warning("Jira API token not configured. Cannot fetch project data.")
+            return []
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_token}",
+            "Content-Type": "application/json"
+        }
+        projects = []
+        for key in project_keys:
+            try:
+                response = requests.get(
+                    f"{self.jira_url}/rest/api/3/project/{key}",
+                    headers=headers,
+                    timeout=30
+                )
+                response.raise_for_status()
+                project_info = response.json()
+                projects.append(
+                    {
+                        "key": key,
+                        "name": project_info.get("name", key),
+                        "lead": project_info.get("lead", {}).get("displayName"),
+                        "projectType": project_info.get("projectTypeKey"),
+                        "simplified": project_info.get("simplified"),
+                        "self": project_info.get("self")
+                    }
+                )
+            except Exception as exc:
+                logger.warning(f"Failed to fetch Jira project {key}: {exc}")
+        return projects
 
 class EmailService:
     """SMTP email service for notifications"""
@@ -169,6 +204,24 @@ class TeamsIntegration:
         if not all([self.client_id, self.client_secret, self.tenant_id]):
             logger.warning("Teams credentials not set. Teams integration will not work.")
     
+    def _get_access_token(self) -> Optional[str]:
+        if not all([self.client_id, self.client_secret, self.tenant_id]):
+            return None
+        token_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
+        data = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "scope": "https://graph.microsoft.com/.default",
+            "grant_type": "client_credentials"
+        }
+        try:
+            response = requests.post(token_url, data=data, timeout=30)
+            response.raise_for_status()
+            return response.json().get("access_token")
+        except Exception as exc:
+            logger.warning(f"Failed to acquire Teams token: {exc}")
+            return None
+    
     def get_meeting_transcript(self, meeting_id: str) -> Optional[str]:
         """
         Get meeting transcript from Teams
@@ -183,8 +236,30 @@ class TeamsIntegration:
             logger.warning("Teams not configured.")
             return None
         
-        # Implementation would use Microsoft Graph API
-        # This is a placeholder for the actual implementation
-        logger.info(f"Would fetch transcript for meeting: {meeting_id}")
+        token = self._get_access_token()
+        if not token:
+            return None
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        # Microsoft Graph beta endpoint for transcripts
+        url = f"https://graph.microsoft.com/beta/communications/onlineMeetings/{meeting_id}/transcripts"
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            transcript_entries = []
+            for item in data.get("value", []):
+                content = item.get("content", "")
+                if content:
+                    transcript_entries.append(content)
+            transcript_text = "\n".join(transcript_entries).strip()
+            if transcript_text:
+                logger.info(f"Fetched transcript for meeting {meeting_id}")
+                return transcript_text
+        except Exception as exc:
+            logger.warning(f"Failed to fetch Teams transcript: {exc}")
         return None
 
