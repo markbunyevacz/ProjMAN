@@ -1,0 +1,49 @@
+{
+  "executive_summary": {
+    "overview": "A heti PMO riport szerint 2 projekt aktív. A User Authentication Module jól halad (80%), míg a Payment Integration késésben van és kockázat alatt áll.",
+    "key_metrics": {
+      "total_projects": 2,
+      "on_track": 1,
+      "at_risk": 1,
+      "delayed": 0,
+      "budget_variance": "+3.2%"
+    },
+    "critical_risks": [
+      {
+        "project": "Payment Integration",
+        "risk": "45% progress, de 12 nyitott ticket. Lehetőség van késésre.",
+        "impact": "high",
+        "mitigation": "Erőforrás újraallokáció vagy sprint hosszabbítás megfontolása"
+      }
+    ],
+    "recommendations": [
+      "Payment Integration projekt erőforrás növelése",
+      "Heti follow-up meeting a kockázatos projekttel",
+      "Budget review a túlköltés miatt"
+    ]
+  },
+  "detailed_analysis": {
+    "trends": [
+      "User Authentication Module stabil haladás",
+      "Payment Integration lassulás a komplexitás miatt",
+      "Átlagos ticket resolution time növekedés"
+    ],
+    "resource_allocation": {
+      "PROJ-1": {
+        "team_size": 5,
+        "utilization": 85
+      },
+      "PROJ-2": {
+        "team_size": 6,
+        "utilization": 95
+      }
+    },
+    "budget_analysis": {
+      "total_planned": 125000,
+      "total_actual": 130000,
+      "variance_percentage": 4.0,
+      "projects_over_budget": 1
+    }
+  }
+}
+

@@ -1,0 +1,12 @@
+Meeting: Heti projekt státusz - 2025-01-15 10:00-11:00
+Résztvevők: Kovács Péter (PM), Nagy Anna (Dev Lead), Szabó István (QA Lead), Tóth Mária (Product Owner)
+
+Kovács Péter: Üdvözlöm mindenkit! Kezdjük a heti státusz meetinggel.
+Nagy Anna: A fejlesztési csapat jól halad. A user authentication modul 80%-ban kész.
+Szabó István: A QA tesztelés elkezdődött, de még vannak kritikus bugok a login flow-ban.
+Tóth Mária: Fontos, hogy a következő sprintben befejezzük, mert a következő hónapban kell a demo.
+Kovács Péter: Rendben. Anna, kérlek, foglalkozz a kritikus bugokkal prioritásként.
+Nagy Anna: Értem, ma elkezdem.
+Szabó István: Én segítek a tesztelésben, ha kész lesz.
+Tóth Mária: Köszönöm! Következő meeting: jövő hétfőn, ugyanekkor.
+

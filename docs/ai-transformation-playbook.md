@@ -422,7 +422,7 @@ POST /api/v1/meetings/process
 {
   "meeting_id": "teams-meeting-id",
   "audio_url": "https://...",
-  "participants": ["user1@company.com", "user2@company.com"],
+  "participants": ["user1@yourcompany.com", "user2@yourcompany.com"],
   "meeting_title": "Heti projekt státusz",
   "meeting_date": "2025-01-15T10:00:00Z"
 }
@@ -608,7 +608,7 @@ POST /api/v1/reports/generate
   "period_end": "2025-01-14",
   "jira_projects": ["PROJ-1", "PROJ-2"],
   "excel_files": ["budget.xlsx"],
-  "recipients": ["executive@company.com"]
+  "recipients": ["executive@yourcompany.com"]
 }
 
 Response:
@@ -986,16 +986,19 @@ Ez az ütemterv egy tipikus 90 napos implementációs folyamatot mutat be. A té
 ## 5. Kapcsolat és támogatás
 
 **Technikai támogatás:**
-- Email: support@agentize.com
+- Email: support@agentize.com (placeholder - cseréld le valós email címre)
 - Chat: Agentize platformon belül
-- Dokumentáció: https://docs.agentize.com
+- Dokumentáció: https://docs.agentize.com (placeholder - cseréld le valós URL-re)
 
 **Projektmenedzsment:**
-- PMO kapcsolattartó: [név, email]
-- Projektmenedzser: [név, email]
+- PMO kapcsolattartó: [PMO vezető neve, pmo@yourcompany.com]
+- Projektmenedzser: [Projektmenedzser neve, pm@yourcompany.com]
+
+**Megjegyzés:** A fenti email címek és URL-ek placeholder értékek. 
+Cseréld le őket a valós kapcsolattartási adatokra az implementáció során.
 
 ---
 
 *Dokumentum verzió: 1.0*  
-*Utolsó frissítés: 2025-01-XX*
+*Utolsó frissítés: 2025-01-15*
 

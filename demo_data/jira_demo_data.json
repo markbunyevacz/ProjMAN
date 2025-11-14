@@ -1,0 +1,53 @@
+{
+  "projects": [
+    {
+      "key": "PROJ-1",
+      "name": "User Authentication Module",
+      "status": "In Progress",
+      "progress": 80,
+      "issues": {
+        "total": 25,
+        "open": 5,
+        "in_progress": 8,
+        "done": 12
+      },
+      "sprint": {
+        "name": "Sprint 15",
+        "start_date": "2025-01-08",
+        "end_date": "2025-01-22"
+      },
+      "budget": {
+        "planned": 50000,
+        "actual": 48000,
+        "currency": "EUR"
+      }
+    },
+    {
+      "key": "PROJ-2",
+      "name": "Payment Integration",
+      "status": "At Risk",
+      "progress": 45,
+      "issues": {
+        "total": 30,
+        "open": 12,
+        "in_progress": 10,
+        "done": 8
+      },
+      "sprint": {
+        "name": "Sprint 15",
+        "start_date": "2025-01-08",
+        "end_date": "2025-01-22"
+      },
+      "budget": {
+        "planned": 75000,
+        "actual": 82000,
+        "currency": "EUR"
+      }
+    }
+  ],
+  "period": {
+    "start": "2025-01-08",
+    "end": "2025-01-14"
+  }
+}
+

@@ -1,0 +1,9 @@
+{
+  "report_type": "weekly",
+  "period_start": "2025-01-08",
+  "period_end": "2025-01-14",
+  "jira_projects": ["PROJ-1", "PROJ-2"],
+  "excel_files": ["budget_demo.xlsx"],
+  "recipients": ["executive@demo.com", "pmo@demo.com"]
+}
+

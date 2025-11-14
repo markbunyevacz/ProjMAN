@@ -21,6 +21,7 @@ Egy átfogó útmutató az AI-transzformációhoz, amely három fő részből á
   - Meeting Assistant use case (jegyzőkönyv + action tracking)
   - PMO Report Generator use case (Excel/Jira → vezetői összefoglaló)
   - Workflow támogatás és időmegtakarítás
+  - **Technikai specifikáció és implementáció** (OpenRouter + Haiku 4.5)
 
 - **90 napos implementációs ütemterv**: Feltételezett ütemterv
   - 1-30 nap: Igényfelmérés, pilot bevezetés
@@ -45,6 +46,7 @@ Bemutató anyagok és útmutatók az első ügyféltalálkozóhoz:
 
 - **Kombinált használat**: Integrált workflow és színergia hatások
 - **Ügyféltalálkozó előkészítés**: Checklist és demo prezentáció struktúra
+- **Demo adatok és folyamatok**: Teljes demo környezet setup és scriptek
 
 ### 3. Success Metrics Framework (`docs/success-metrics-framework.md`)
 
@@ -82,6 +84,24 @@ Kész CSV fájlok az Excel/Google Sheets importáláshoz:
 - `tools/roi-calculator-savings.csv`: Megtakarítás kategóriák
 - `tools/roi-calculator-summary.csv`: ROI számítás és összefoglaló
 
+### Demo Környezet
+
+Teljes demo környezet a Proof of Value bemutatáshoz:
+
+- **Docker Compose** (`docker-compose.demo.yml`): PostgreSQL, Redis, MinIO
+- **Demo adatok** (`demo_data/`): Meeting transcript, Jira adatok, Excel struktúra
+- **Scriptek** (`scripts/`): Adatbetöltés és demo futtatás
+- **Screenshots** (`screenshots/`): Placeholder mappák a képernyőképekhez
+
+### NotebookLM Integráció
+
+NotebookLM-hez optimalizált dokumentumok automatizáláshoz:
+
+- **VIDEO_SCRIPTS.md**: Részletes videó scriptek a 4 demo videóhoz
+- **SCREENSHOT_GUIDE.md**: Képernyőképek készítési útmutatója (13 screenshot)
+- **INTEGRATION_GUIDE.md**: Teljes fejlesztési útmutató (API, integrációk, kód)
+- **README.md**: NotebookLM használati útmutató
+
 ---
 
 ## 📁 Projekt struktúra
@@ -97,7 +117,28 @@ ProjMAN/
 │   ├── roi-calculator-investment.csv       # Befektetés sablon
 │   ├── roi-calculator-savings.csv          # Megtakarítás sablon
 │   └── roi-calculator-summary.csv         # Összefoglaló sablon
-└── README.md                                # Ez a fájl
+├── demo_data/
+│   ├── meeting_demo_transcript.txt         # Demo meeting átirat
+│   ├── meeting_request.json                 # API kérés példa
+│   ├── meeting_minutes_demo.json           # Várható AI output
+│   ├── jira_demo_data.json                 # Demo Jira adatok
+│   ├── report_request.json                  # API kérés példa
+│   ├── pmo_report_demo.json                # Várható AI output
+│   └── init.sql                            # Adatbázis inicializáló script
+├── scripts/
+│   ├── load_demo_data.py                   # Demo adatok betöltése
+│   └── demo_script.sh                      # Teljes demo folyamat
+├── screenshots/
+│   ├── meeting-assistant/                  # Meeting Assistant képernyőképek
+│   └── pmo-report-generator/               # PMO Report Generator képernyőképek
+├── notebooklm/
+│   ├── VIDEO_SCRIPTS.md                   # Videó scriptek NotebookLM-hez
+│   ├── SCREENSHOT_GUIDE.md                 # Screenshot útmutató NotebookLM-hez
+│   ├── INTEGRATION_GUIDE.md                # Fejlesztési útmutató NotebookLM-hez
+│   └── README.md                           # NotebookLM használati útmutató
+├── docker-compose.demo.yml                 # Demo környezet
+├── .gitignore                              # Git ignore szabályok
+└── README.md                               # Ez a fájl
 ```
 
 ---
@@ -117,11 +158,35 @@ ProjMAN/
 3. Töltsd ki a sablont az ügyfél adataival
 4. Mutasd be az eredményeket az ügyféltalálkozón
 
-### 3. Ügyféltalálkozó előkészítése
+### 3. Demo környezet indítása
+
+1. **Előfeltételek:**
+   ```bash
+   # Docker és Docker Compose telepítve
+   docker --version
+   docker-compose --version
+   ```
+
+2. **Demo környezet indítása:**
+   ```bash
+   docker-compose -f docker-compose.demo.yml up -d
+   ```
+
+3. **Demo adatok betöltése:**
+   ```bash
+   python scripts/load_demo_data.py --all
+   ```
+
+4. **Demo script futtatása:**
+   ```bash
+   bash scripts/demo_script.sh
+   ```
+
+### 4. Ügyféltalálkozó előkészítése
 
 1. Készítsd elő a demo környezetet
 2. Gyakorold a demo scripteket
-3. Ellenőrizd a videó anyagokat
+3. Ellenőrizd a videó anyagokat (amikor elkészülnek)
 4. Készítsd elő a ROI kalkulátort példa adatokkal
 
 ---
@@ -145,11 +210,48 @@ ProjMAN/
 
 ---
 
+## ⚠️ Ismert korlátok és következő lépések
+
+### Jelenlegi állapot
+
+✅ **Kész:**
+- Dokumentáció (80-90%)
+- Demo adatok struktúra
+- Docker Compose konfiguráció
+- Python scriptek alap struktúra
+
+⚠️ **Hiányzik:**
+- Screenshots (13 fájl) - Placeholder mappák kész, valós képernyőképek szükségesek
+- Demo videók (4 videó) - Útmutatók kész, videók készítése szükséges
+- API implementáció - Specifikációk kész, kód implementálása szükséges
+- Excel fájlok - Struktúra dokumentálva, valós fájlok szükségesek
+
+### Következő lépések
+
+1. **Screenshots készítése:**
+   - Demo környezet futtatása
+   - Beállítási útmutató lépéseinek követése
+   - Képernyőképek készítése
+
+2. **Demo videók készítése:**
+   - Gyors bemutatás (3-5 perc) - Meeting Assistant
+   - Részletes beállítás (10-15 perc) - Meeting Assistant
+   - Gyors bemutatás (3-5 perc) - PMO Report Generator
+   - Részletes beállítás (10-15 perc) - PMO Report Generator
+
+3. **API implementáció:**
+   - OpenRouter integráció
+   - Meeting Assistant agent
+   - PMO Report Generator agent
+   - Integrációk (Teams, Jira, SMTP)
+
+---
+
 ## 📝 Dokumentum verziók
 
-- **AI Transformation Playbook**: v1.0
-- **Proof of Value Kit**: v1.0
-- **Success Metrics Framework**: v1.0
+- **AI Transformation Playbook**: v1.0 (2025-01-15)
+- **Proof of Value Kit**: v1.0 (2025-01-15)
+- **Success Metrics Framework**: v1.0 (2025-01-15)
 - **ROI Kalkulátor Sablon**: v1.0
 
 ---
@@ -166,4 +268,4 @@ MIT License - lásd a LICENSE fájlt részletekért.
 
 ---
 
-*Utolsó frissítés: 2025-01-XX*
+*Utolsó frissítés: 2025-01-15*

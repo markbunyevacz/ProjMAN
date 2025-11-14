@@ -377,5 +377,5 @@ Lásd: `tools/roi-calculator-template.md`
 ---
 
 *Dokumentum verzió: 1.0*  
-*Utolsó frissítés: 2025-01-XX*
+*Utolsó frissítés: 2025-01-15*
 

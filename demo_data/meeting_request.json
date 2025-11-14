@@ -1,0 +1,14 @@
+{
+  "meeting_id": "demo-meeting-001",
+  "transcript": "Meeting: Heti projekt státusz - 2025-01-15 10:00-11:00\nRésztvevők: Kovács Péter (PM), Nagy Anna (Dev Lead), Szabó István (QA Lead), Tóth Mária (Product Owner)\n\nKovács Péter: Üdvözlöm mindenkit! Kezdjük a heti státusz meetinggel.\nNagy Anna: A fejlesztési csapat jól halad. A user authentication modul 80%-ban kész.\nSzabó István: A QA tesztelés elkezdődött, de még vannak kritikus bugok a login flow-ban.\nTóth Mária: Fontos, hogy a következő sprintben befejezzük, mert a következő hónapban kell a demo.\nKovács Péter: Rendben. Anna, kérlek, foglalkozz a kritikus bugokkal prioritásként.\nNagy Anna: Értem, ma elkezdem.\nSzabó István: Én segítek a tesztelésben, ha kész lesz.\nTóth Mária: Köszönöm! Következő meeting: jövő hétfőn, ugyanekkor.",
+  "participants": [
+    "kovacs.peter@demo.com",
+    "nagy.anna@demo.com",
+    "szabo.istvan@demo.com",
+    "toth.maria@demo.com"
+  ],
+  "meeting_title": "Heti projekt státusz",
+  "meeting_date": "2025-01-15T10:00:00Z",
+  "create_jira_tickets": true
+}
+

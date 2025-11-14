@@ -1,0 +1,45 @@
+{
+  "summary": "Heti projekt státusz meeting a user authentication modul fejlesztéséről. A fejlesztés 80%-ban kész, de kritikus bugok vannak a login flow-ban, amelyeket prioritásként kell kezelni.",
+  "agenda_items": [
+    {
+      "topic": "Fejlesztési státusz",
+      "discussion": "A user authentication modul 80%-ban kész",
+      "decisions": "Kritikus bugok prioritásként kezelendők"
+    },
+    {
+      "topic": "QA tesztelés",
+      "discussion": "Tesztelés elkezdődött, kritikus bugok azonosítva",
+      "decisions": "Szabó István segít a tesztelésben"
+    }
+  ],
+  "key_points": [
+    "User authentication modul 80% kész",
+    "Kritikus bugok a login flow-ban",
+    "Demo következő hónapban",
+    "Következő meeting: jövő hétfőn"
+  ],
+  "action_items": [
+    {
+      "id": "AI-001",
+      "description": "Kritikus bugok javítása a login flow-ban",
+      "assignee": "Nagy Anna",
+      "assignee_email": "nagy.anna@demo.com",
+      "due_date": "2025-01-17",
+      "priority": "high"
+    },
+    {
+      "id": "AI-002",
+      "description": "QA tesztelés támogatása",
+      "assignee": "Szabó István",
+      "assignee_email": "szabo.istvan@demo.com",
+      "due_date": "2025-01-18",
+      "priority": "medium"
+    }
+  ],
+  "next_steps": [
+    "Kritikus bugok javítása (Nagy Anna)",
+    "QA tesztelés folytatása (Szabó István)",
+    "Következő meeting: 2025-01-22 10:00"
+  ]
+}
+
