@@ -1,0 +1,27 @@
+ROI Számítás,,
+Alapadatok,,
+Kategória,Érték (EUR)
+Összes befektetés (első év),=Befektetés!B18
+Időmegtakarítás alapú megtakarítás,=Megtakarítás!F16
+További megtakarítások,=Megtakarítás!B22
+Összes megtakarítás,=SUM(C3:C4)
+,,
+ROI számítás,,
+Metrika,Képlet,Érték
+Nettó megtakarítás (EUR),=C5-C2,Automatikus
+ROI (%),=((C5-C2)/C2)*100,Automatikus
+Payback period (hónap),=(C2/C5)*12,Automatikus
+,,
+Értelmezés,,
+ROI értelmezés,,
+> 200%,Kiváló ROI erősen ajánlott,
+100-200%,Jó ROI ajánlott,
+50-100%,Elfogadható ROI érdemes megfontolni,
+< 50%,Alacsony ROI részletesebb elemzés szükséges,
+,,
+Payback period értelmezés,,
+< 3 hónap,Nagyon gyors megtérülés,
+3-6 hónap,Gyors megtérülés,
+6-12 hónap,Elfogadható megtérülés,
+> 12 hónap,Lassú megtérülés,
+

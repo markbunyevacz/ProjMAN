@@ -1,0 +1,27 @@
+Meeting Assistant - Időmegtakarítás,,
+Kategória,Előtte (óra/hét),Utána (óra/hét),Megtakarítás (óra/hét),Felhasználók száma,Összes megtakarítás (óra/hét)
+Jegyzőkönyv készítés,2.5,0.25,=B2-C2,10,=D2*E2
+Action item tracking,1.5,0.15,=B3-C3,10,=D3*E3
+Meeting előkészítés,1,0.5,=B4-C4,10,=D4*E4
+Összesen,,,,,=SUM(F2:F4)
+,,
+PMO Report Generator - Időmegtakarítás,,
+Kategória,Előtte (óra/hét),Utána (óra/hét),Megtakarítás (óra/hét),Felhasználók száma,Összes megtakarítás (óra/hét)
+Riport készítés,5,0.75,=B8-C8,2,=D8*E8
+Adatgyűjtés,2,0,=B9-C9,2,=D9*E9
+Adatelemzés,1,0.25,=B10-C10,2,=D10*E10
+Összesen,,,,,=SUM(F8:F10)
+,,
+Költség megtakarítás számítása,,
+Kategória,Megtakarítás (óra/hét),Hetek száma/év,Összes megtakarítás (óra/év),Átlagos óradíj (EUR),Költség megtakarítás (EUR/év)
+Meeting Assistant,=F5,50,=B14*C14,80,=D14*E14
+PMO Report Generator,=F11,50,=B15*C15,100,=D15*E15
+Összesen,,,,,=SUM(F14:F15)
+,,
+További megtakarítások,,
+Kategória,Érték (EUR/év),Megjegyzés
+Hibák csökkentése,3000,Manuális adatbevitel hibák csökkentése
+Gyorsabb döntéshozatal,5000,Információ gyorsabb elérhetősége
+Szinergia hatások,2000,Jobban koordinált projektek
+Összesen,=SUM(B19:B21),
+

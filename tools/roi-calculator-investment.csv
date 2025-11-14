@@ -1,0 +1,25 @@
+Kategória,Érték,Megjegyzés
+Szoftver licenc díjak,,
+Agentize platform előfizetés (havonta),500,Meeting Assistant + PMO Report Generator
+Éves licenc díj,=B2*12,Automatikus számítás
+,,
+Implementációs költségek,,
+Kategória,Óra,Óradíj (EUR),Összesen (EUR)
+Konfiguráció és testreszabás,60,100,=B5*C5
+Tréning és onboarding,30,100,=B6*C6
+Integrációk (Jira Excel Teams),20,100,=B7*C7
+Összesen,,,=SUM(D5:D7)
+,,
+Folyamatos karbantartás,,
+Kategória,Érték,Megjegyzés
+Havonta karbantartás (óra),8,
+Óradíj (EUR),100,
+Éves karbantartás,=B10*B11*12,Automatikus számítás
+,,
+Összes befektetés (első év),,
+Kategória,Érték (EUR)
+Éves licenc díj,=B3
+Implementáció,=D8
+Éves karbantartás,=B12
+Összesen,=SUM(B15:B17)
+
