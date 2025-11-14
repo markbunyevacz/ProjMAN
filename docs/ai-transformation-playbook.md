@@ -262,6 +262,543 @@ Időmegtakarítás: 5 óra/hét
 - GDPR megfelelőség
 - Szervezeti adatok védelme
 
+### 2.5 Technikai specifikáció és implementáció
+
+#### 2.5.1 AI Agent architektúra
+
+**AI Agent definíció:**
+Az AI agent egy autonóm szoftver entitás, amely:
+- **Érzékelés (Perception)**: Külső adatok feldolgozása (meeting audio, Jira API, Excel fájlok)
+- **Döntéshozatal (Decision Making)**: AI-alapú elemzés és következtetés
+- **Cselekvés (Action)**: Automatikus feladatok végrehajtása (jegyzőkönyv generálás, riport készítés)
+- **Visszacsatolás (Feedback Loop)**: Eredmények értékelése és finomhangolás
+
+**Agent komponensek:**
+1. **Input Handler**: Adatok fogadása és előfeldolgozása
+2. **AI Engine**: OpenRouter + Haiku 4.5 integráció
+3. **Task Executor**: Feladatok végrehajtása
+4. **Output Generator**: Eredmények formázása és küldése
+5. **State Manager**: Agent állapot kezelése
+
+#### 2.5.2 Infrastruktúra követelmények
+
+**Szükséges szolgáltatások:**
+
+1. **AI Szolgáltató: OpenRouter**
+   - API endpoint: `https://openrouter.ai/api/v1/chat/completions`
+   - Model: `anthropic/claude-3.5-haiku` (Haiku 4.5)
+   - API kulcs: Környezeti változóban tárolva (`OPENROUTER_API_KEY`)
+   - Rate limiting: 100 kérés/perc (default)
+
+2. **Adatbázis:**
+   - PostgreSQL 14+ vagy SQLite (fejlesztéshez)
+   - Táblák:
+     - `meetings`: Meeting metaadatok
+     - `meeting_transcripts`: Átirat tárolás
+     - `action_items`: Action item-ek
+     - `reports`: Generált riportok
+     - `agent_configs`: Agent konfigurációk
+
+3. **Message Queue:**
+   - Redis vagy RabbitMQ (aszinkron feldolgozáshoz)
+   - Queue nevek:
+     - `meeting:process`: Meeting feldolgozás
+     - `report:generate`: Riport generálás
+
+4. **File Storage:**
+   - S3-kompatibilis storage (minio fejlesztéshez)
+   - Bucket struktúra:
+     - `meetings/audio/`: Meeting audio fájlok
+     - `reports/pdf/`: Generált PDF riportok
+     - `reports/excel/`: Excel exportok
+
+5. **Integrációk:**
+   - **Microsoft Teams Graph API**: Meeting adatok lekérése
+   - **Jira REST API v3**: Ticket létrehozás/lekérés
+   - **SMTP Server**: Email küldés
+
+**Környezeti változók (.env):**
+```bash
+# AI Provider
+OPENROUTER_API_KEY=sk-or-v1-...
+OPENROUTER_MODEL=anthropic/claude-3.5-haiku
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/agentize
+REDIS_URL=redis://localhost:6379/0
+
+# Storage
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=agentize
+
+# Integrations
+TEAMS_CLIENT_ID=...
+TEAMS_CLIENT_SECRET=...
+TEAMS_TENANT_ID=...
+JIRA_URL=https://yourcompany.atlassian.net
+JIRA_API_TOKEN=...
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASSWORD=...
+```
+
+#### 2.5.3 Meeting Assistant technikai specifikáció
+
+**Agent workflow:**
+
+```
+1. Meeting Event Trigger
+   ↓
+2. Audio Download (Teams API)
+   ↓
+3. Speech-to-Text (Whisper API vagy helyi)
+   ↓
+4. Transcript → AI Processing (OpenRouter/Haiku)
+   ↓
+5. Extract: Agenda, Key Points, Action Items
+   ↓
+6. Generate Meeting Minutes (Markdown → PDF)
+   ↓
+7. Create Jira Tickets (action items)
+   ↓
+8. Send Email Notifications
+   ↓
+9. Store Results (Database)
+```
+
+**AI Prompt struktúra (Haiku 4.5):**
+
+```python
+MEETING_ASSISTANT_SYSTEM_PROMPT = """
+Te egy professzionális meeting jegyzőkönyv generáló asszisztens vagy.
+Feladatod:
+1. Átirat elemzése és strukturálása
+2. Kulcsfontosságú pontok azonosítása
+3. Action item-ek kiemelése (ki, mit, mikorra)
+4. Következő lépések javaslása
+
+Kimenet formátum (JSON):
+{
+  "summary": "Rövid összefoglaló (2-3 mondat)",
+  "agenda_items": [
+    {"topic": "...", "discussion": "...", "decisions": "..."}
+  ],
+  "key_points": ["...", "..."],
+  "action_items": [
+    {
+      "id": "AI-001",
+      "description": "...",
+      "assignee": "név vagy email",
+      "due_date": "YYYY-MM-DD",
+      "priority": "high|medium|low"
+    }
+  ],
+  "next_steps": ["...", "..."]
+}
+"""
+
+MEETING_ASSISTANT_USER_PROMPT = """
+Meeting átirat:
+{transcript}
+
+Meeting metaadatok:
+- Dátum: {meeting_date}
+- Résztvevők: {participants}
+- Cím: {meeting_title}
+- Időtartam: {duration} perc
+
+Generálj jegyzőkönyvet a fenti formátumban.
+"""
+```
+
+**API endpoint specifikáció:**
+
+```python
+POST /api/v1/meetings/process
+{
+  "meeting_id": "teams-meeting-id",
+  "audio_url": "https://...",
+  "participants": ["user1@company.com", "user2@company.com"],
+  "meeting_title": "Heti projekt státusz",
+  "meeting_date": "2025-01-15T10:00:00Z"
+}
+
+Response:
+{
+  "meeting_id": "uuid",
+  "status": "processing|completed|failed",
+  "minutes_url": "https://.../minutes.pdf",
+  "action_items": [...],
+  "jira_tickets": ["JIRA-123", "JIRA-124"]
+}
+```
+
+**Adatmodell (SQL):**
+
+```sql
+CREATE TABLE meetings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    external_id VARCHAR(255) UNIQUE, -- Teams meeting ID
+    title VARCHAR(500),
+    date TIMESTAMP,
+    duration_minutes INTEGER,
+    participants JSONB, -- ["email1", "email2"]
+    audio_url TEXT,
+    transcript TEXT,
+    status VARCHAR(50), -- pending, processing, completed, failed
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE meeting_minutes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    meeting_id UUID REFERENCES meetings(id),
+    summary TEXT,
+    agenda_items JSONB,
+    key_points JSONB,
+    action_items JSONB,
+    next_steps JSONB,
+    minutes_pdf_url TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE action_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    meeting_id UUID REFERENCES meetings(id),
+    description TEXT,
+    assignee_email VARCHAR(255),
+    due_date DATE,
+    priority VARCHAR(20),
+    jira_ticket_id VARCHAR(100),
+    status VARCHAR(50), -- open, in_progress, completed
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### 2.5.4 PMO Report Generator technikai specifikáció
+
+**Agent workflow:**
+
+```
+1. Schedule Trigger (Cron: heti/havi)
+   ↓
+2. Data Collection:
+   - Jira API: Projektek, ticket-ek, státuszok
+   - Excel Files: Költségvetés, erőforrások
+   ↓
+3. Data Aggregation & Validation
+   ↓
+4. AI Analysis (OpenRouter/Haiku):
+   - Trend elemzés
+   - Kockázat azonosítás
+   - Ajánlások generálása
+   ↓
+5. Generate Report:
+   - Executive Summary (AI generált)
+   - Charts/Graphs (matplotlib/plotly)
+   - Detailed Data (tables)
+   ↓
+6. Export: PDF + Excel
+   ↓
+7. Email Distribution
+   ↓
+8. Store Results
+```
+
+**AI Prompt struktúra (Haiku 4.5):**
+
+```python
+PMO_REPORT_SYSTEM_PROMPT = """
+Te egy PMO riport generáló asszisztens vagy.
+Feladatod:
+1. Projekt adatok elemzése (Jira + Excel)
+2. Trend azonosítás (késések, túlköltések, erőforrás problémák)
+3. Kockázatok prioritizálása
+4. Vezetői összefoglaló írása (1-2 oldal, executive summary)
+
+Kimenet formátum (JSON):
+{
+  "executive_summary": {
+    "overview": "Rövid áttekintés (1 bekezdés)",
+    "key_metrics": {
+      "total_projects": 15,
+      "on_track": 10,
+      "at_risk": 3,
+      "delayed": 2,
+      "budget_variance": "+5%"
+    },
+    "critical_risks": [
+      {
+        "project": "Projekt neve",
+        "risk": "Kockázat leírása",
+        "impact": "high|medium|low",
+        "mitigation": "Javasolt megoldás"
+      }
+    ],
+    "recommendations": ["...", "..."]
+  },
+  "detailed_analysis": {
+    "trends": ["...", "..."],
+    "resource_allocation": {...},
+    "budget_analysis": {...}
+  }
+}
+"""
+
+PMO_REPORT_USER_PROMPT = """
+Projekt adatok (Jira):
+{jira_data}
+
+Költségvetés adatok (Excel):
+{budget_data}
+
+Időszak: {period_start} - {period_end}
+
+Generálj PMO riportot a fenti formátumban.
+"""
+```
+
+**Adatmodell (SQL):**
+
+```sql
+CREATE TABLE reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_type VARCHAR(50), -- weekly, monthly, quarterly
+    period_start DATE,
+    period_end DATE,
+    status VARCHAR(50), -- generating, completed, failed
+    pdf_url TEXT,
+    excel_url TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE report_data (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID REFERENCES reports(id),
+    source VARCHAR(50), -- jira, excel, manual
+    data_type VARCHAR(50), -- projects, tickets, budget
+    raw_data JSONB,
+    processed_data JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE report_analysis (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    report_id UUID REFERENCES reports(id),
+    executive_summary JSONB,
+    trends JSONB,
+    risks JSONB,
+    recommendations JSONB,
+    ai_model_version VARCHAR(50),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**API endpoint specifikáció:**
+
+```python
+POST /api/v1/reports/generate
+{
+  "report_type": "weekly|monthly|quarterly",
+  "period_start": "2025-01-08",
+  "period_end": "2025-01-14",
+  "jira_projects": ["PROJ-1", "PROJ-2"],
+  "excel_files": ["budget.xlsx"],
+  "recipients": ["executive@company.com"]
+}
+
+Response:
+{
+  "report_id": "uuid",
+  "status": "generating|completed",
+  "pdf_url": "https://.../report.pdf",
+  "excel_url": "https://.../report.xlsx"
+}
+```
+
+#### 2.5.5 Implementációs útmutató junior fejlesztőnek
+
+**1. Projekt setup:**
+
+```bash
+# Projekt struktúra
+agentize-platform/
+├── agents/
+│   ├── meeting_assistant/
+│   │   ├── __init__.py
+│   │   ├── agent.py          # Fő agent logika
+│   │   ├── prompts.py        # AI prompt-ok
+│   │   ├── processors.py     # Audio/transcript feldolgozás
+│   │   └── integrations.py  # Teams, Jira integrációk
+│   └── pmo_report_generator/
+│       ├── __init__.py
+│       ├── agent.py
+│       ├── prompts.py
+│       ├── data_collectors.py # Jira, Excel adatgyűjtés
+│       └── report_builder.py # PDF/Excel generálás
+├── core/
+│   ├── ai_client.py          # OpenRouter wrapper
+│   ├── database.py           # DB kapcsolat
+│   └── storage.py            # S3 fájlkezelés
+├── api/
+│   └── routes.py             # FastAPI endpoints
+├── requirements.txt
+└── .env.example
+```
+
+**2. OpenRouter integráció (core/ai_client.py):**
+
+```python
+import os
+import httpx
+from typing import Dict, Any, List
+
+class OpenRouterClient:
+    def __init__(self):
+        self.api_key = os.getenv("OPENROUTER_API_KEY")
+        self.model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-3.5-haiku")
+        self.base_url = "https://openrouter.ai/api/v1"
+        self.client = httpx.AsyncClient(
+            base_url=self.base_url,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "HTTP-Referer": os.getenv("APP_URL", "http://localhost"),
+                "X-Title": "Agentize Platform"
+            },
+            timeout=60.0
+        )
+    
+    async def chat_completion(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 0.7,
+        max_tokens: int = 4000
+    ) -> Dict[str, Any]:
+        """AI kérés küldése OpenRouter-on keresztül"""
+        response = await self.client.post(
+            "/chat/completions",
+            json={
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            }
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    async def extract_json(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """JSON kinyerése AI válaszból"""
+        content = response["choices"][0]["message"]["content"]
+        # JSON parsing (támogatja code block-ot is)
+        import json
+        import re
+        json_match = re.search(r'```json\n(.*?)\n```', content, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group(1))
+        return json.loads(content)
+```
+
+**3. Meeting Assistant implementáció (agents/meeting_assistant/agent.py):**
+
+```python
+from core.ai_client import OpenRouterClient
+from agents.meeting_assistant.prompts import (
+    MEETING_ASSISTANT_SYSTEM_PROMPT,
+    build_user_prompt
+)
+import json
+
+class MeetingAssistantAgent:
+    def __init__(self):
+        self.ai_client = OpenRouterClient()
+    
+    async def process_meeting(
+        self,
+        transcript: str,
+        meeting_metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Meeting feldolgozása és jegyzőkönyv generálása"""
+        
+        # 1. AI hívás
+        user_prompt = build_user_prompt(transcript, meeting_metadata)
+        response = await self.ai_client.chat_completion(
+            system_prompt=MEETING_ASSISTANT_SYSTEM_PROMPT,
+            user_prompt=user_prompt
+        )
+        
+        # 2. JSON kinyerése
+        minutes_data = await self.ai_client.extract_json(response)
+        
+        # 3. Action item-ek feldolgozása
+        action_items = minutes_data.get("action_items", [])
+        for item in action_items:
+            # Jira ticket létrehozás (ha integrálva van)
+            if meeting_metadata.get("create_jira_tickets"):
+                await self._create_jira_ticket(item)
+        
+        return minutes_data
+    
+    async def _create_jira_ticket(self, action_item: Dict[str, Any]):
+        """Jira ticket létrehozása action item-ből"""
+        # Implementáció Jira API-val
+        pass
+```
+
+**4. Error handling és retry logika:**
+
+```python
+import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+class RobustAIClient(OpenRouterClient):
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10)
+    )
+    async def chat_completion_with_retry(self, *args, **kwargs):
+        """Retry logikával AI hívás"""
+        try:
+            return await self.chat_completion(*args, **kwargs)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 429:  # Rate limit
+                await asyncio.sleep(60)  # Várás 1 percet
+                raise
+            raise
+```
+
+**5. Testing:**
+
+```python
+# tests/test_meeting_assistant.py
+import pytest
+from agents.meeting_assistant.agent import MeetingAssistantAgent
+
+@pytest.mark.asyncio
+async def test_meeting_assistant_basic():
+    agent = MeetingAssistantAgent()
+    transcript = "Meeting transcript here..."
+    metadata = {
+        "meeting_title": "Test Meeting",
+        "participants": ["user1@test.com"],
+        "meeting_date": "2025-01-15"
+    }
+    
+    result = await agent.process_meeting(transcript, metadata)
+    
+    assert "summary" in result
+    assert "action_items" in result
+    assert len(result["action_items"]) > 0
+```
+
 ---
 
 ## 3. 90 napos implementációs ütemterv

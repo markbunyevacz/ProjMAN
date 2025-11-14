@@ -613,6 +613,367 @@ A Meeting Assistant és PMO Report Generator együtt használva még hatékonyab
 
 ---
 
+## 7. Demo adatok és folyamatok
+
+### 7.1 Demo adatbázis előkészítése
+
+#### 7.1.1 Meeting Assistant demo adatok
+
+**Demo meeting átirat (meeting_demo_transcript.txt):**
+
+```
+Meeting: Heti projekt státusz - 2025-01-15 10:00-11:00
+Résztvevők: Kovács Péter (PM), Nagy Anna (Dev Lead), Szabó István (QA Lead), Tóth Mária (Product Owner)
+
+Kovács Péter: Üdvözlöm mindenkit! Kezdjük a heti státusz meetinggel.
+Nagy Anna: A fejlesztési csapat jól halad. A user authentication modul 80%-ban kész.
+Szabó István: A QA tesztelés elkezdődött, de még vannak kritikus bugok a login flow-ban.
+Tóth Mária: Fontos, hogy a következő sprintben befejezzük, mert a következő hónapban kell a demo.
+Kovács Péter: Rendben. Anna, kérlek, foglalkozz a kritikus bugokkal prioritásként.
+Nagy Anna: Értem, ma elkezdem.
+Szabó István: Én segítek a tesztelésben, ha kész lesz.
+Tóth Mária: Köszönöm! Következő meeting: jövő hétfőn, ugyanekkor.
+```
+
+**Várható AI output (meeting_minutes_demo.json):**
+
+```json
+{
+  "summary": "Heti projekt státusz meeting a user authentication modul fejlesztéséről. A fejlesztés 80%-ban kész, de kritikus bugok vannak a login flow-ban, amelyeket prioritásként kell kezelni.",
+  "agenda_items": [
+    {
+      "topic": "Fejlesztési státusz",
+      "discussion": "A user authentication modul 80%-ban kész",
+      "decisions": "Kritikus bugok prioritásként kezelendők"
+    },
+    {
+      "topic": "QA tesztelés",
+      "discussion": "Tesztelés elkezdődött, kritikus bugok azonosítva",
+      "decisions": "Szabó István segít a tesztelésben"
+    }
+  ],
+  "key_points": [
+    "User authentication modul 80% kész",
+    "Kritikus bugok a login flow-ban",
+    "Demo következő hónapban",
+    "Következő meeting: jövő hétfőn"
+  ],
+  "action_items": [
+    {
+      "id": "AI-001",
+      "description": "Kritikus bugok javítása a login flow-ban",
+      "assignee": "Nagy Anna",
+      "due_date": "2025-01-17",
+      "priority": "high"
+    },
+    {
+      "id": "AI-002",
+      "description": "QA tesztelés támogatása",
+      "assignee": "Szabó István",
+      "due_date": "2025-01-18",
+      "priority": "medium"
+    }
+  ],
+  "next_steps": [
+    "Kritikus bugok javítása (Nagy Anna)",
+    "QA tesztelés folytatása (Szabó István)",
+    "Következő meeting: 2025-01-22 10:00"
+  ]
+}
+```
+
+**Demo Jira ticket-ek (várt output):**
+
+```
+JIRA-123: [HIGH] Kritikus bugok javítása a login flow-ban
+- Assignee: Nagy Anna
+- Due: 2025-01-17
+- Description: A login flow-ban azonosított kritikus bugok javítása prioritásként.
+
+JIRA-124: [MEDIUM] QA tesztelés támogatása
+- Assignee: Szabó István
+- Due: 2025-01-18
+- Description: QA tesztelés támogatása a user authentication modulhoz.
+```
+
+#### 7.1.2 PMO Report Generator demo adatok
+
+**Demo Jira adatok (jira_demo_data.json):**
+
+```json
+{
+  "projects": [
+    {
+      "key": "PROJ-1",
+      "name": "User Authentication Module",
+      "status": "In Progress",
+      "progress": 80,
+      "issues": {
+        "total": 25,
+        "open": 5,
+        "in_progress": 8,
+        "done": 12
+      },
+      "sprint": {
+        "name": "Sprint 15",
+        "start_date": "2025-01-08",
+        "end_date": "2025-01-22"
+      }
+    },
+    {
+      "key": "PROJ-2",
+      "name": "Payment Integration",
+      "status": "At Risk",
+      "progress": 45,
+      "issues": {
+        "total": 30,
+        "open": 12,
+        "in_progress": 10,
+        "done": 8
+      },
+      "sprint": {
+        "name": "Sprint 15",
+        "start_date": "2025-01-08",
+        "end_date": "2025-01-22"
+      }
+    }
+  ],
+  "period": {
+    "start": "2025-01-08",
+    "end": "2025-01-14"
+  }
+}
+```
+
+**Demo Excel adatok (budget_demo.xlsx struktúra):**
+
+| Projekt | Tervezett költség | Tényleges költség | Különbség | Státusz |
+|---------|-------------------|-------------------|-----------|---------|
+| PROJ-1  | €50,000          | €48,000          | -€2,000   | Under   |
+| PROJ-2  | €75,000          | €82,000          | +€7,000   | Over    |
+
+**Várható AI output (pmo_report_demo.json):**
+
+```json
+{
+  "executive_summary": {
+    "overview": "A heti PMO riport szerint 2 projekt aktív. A User Authentication Module jól halad (80%), míg a Payment Integration késésben van és kockázat alatt áll.",
+    "key_metrics": {
+      "total_projects": 2,
+      "on_track": 1,
+      "at_risk": 1,
+      "delayed": 0,
+      "budget_variance": "+3.2%"
+    },
+    "critical_risks": [
+      {
+        "project": "Payment Integration",
+        "risk": "45% progress, de 12 nyitott ticket. Lehetőség van késésre.",
+        "impact": "high",
+        "mitigation": "Erőforrás újraallokáció vagy sprint hosszabbítás megfontolása"
+      }
+    ],
+    "recommendations": [
+      "Payment Integration projekt erőforrás növelése",
+      "Heti follow-up meeting a kockázatos projekttel",
+      "Budget review a túlköltés miatt"
+    ]
+  }
+}
+```
+
+### 7.2 Demo folyamatok
+
+#### 7.2.1 Meeting Assistant demo folyamat
+
+**Előfeltételek:**
+- [ ] Demo meeting átirat betöltve
+- [ ] OpenRouter API kulcs beállítva
+- [ ] Jira integráció konfigurálva (opcionális)
+- [ ] Email SMTP beállítva
+
+**Folyamat lépései:**
+
+1. **Meeting trigger szimulálása:**
+   ```bash
+   curl -X POST http://localhost:8000/api/v1/meetings/process \
+     -H "Content-Type: application/json" \
+     -d '{
+       "meeting_id": "demo-meeting-001",
+       "transcript": "[demo transcript content]",
+       "participants": ["kovacs.peter@demo.com", "nagy.anna@demo.com"],
+       "meeting_title": "Heti projekt státusz",
+       "meeting_date": "2025-01-15T10:00:00Z"
+     }'
+   ```
+
+2. **Feldolgozás követése:**
+   ```bash
+   curl http://localhost:8000/api/v1/meetings/demo-meeting-001/status
+   ```
+
+3. **Eredmények ellenőrzése:**
+   - Jegyzőkönyv PDF letöltése
+   - Action item-ek listája
+   - Jira ticket-ek (ha integrálva)
+
+**Várható időzítés:**
+- Transcript feldolgozás: 30-60 másodperc
+- AI generálás: 10-20 másodperc
+- PDF generálás: 5-10 másodperc
+- Jira ticket létrehozás: 5-10 másodperc
+- **Összesen: ~1-2 perc**
+
+#### 7.2.2 PMO Report Generator demo folyamat
+
+**Előfeltételek:**
+- [ ] Demo Jira adatok importálva
+- [ ] Demo Excel fájl feltöltve
+- [ ] OpenRouter API kulcs beállítva
+- [ ] Email címzettek konfigurálva
+
+**Folyamat lépései:**
+
+1. **Riport generálás indítása:**
+   ```bash
+   curl -X POST http://localhost:8000/api/v1/reports/generate \
+     -H "Content-Type: application/json" \
+     -d '{
+       "report_type": "weekly",
+       "period_start": "2025-01-08",
+       "period_end": "2025-01-14",
+       "jira_projects": ["PROJ-1", "PROJ-2"],
+       "excel_files": ["budget_demo.xlsx"],
+       "recipients": ["executive@demo.com"]
+     }'
+   ```
+
+2. **Feldolgozás követése:**
+   ```bash
+   curl http://localhost:8000/api/v1/reports/{report_id}/status
+   ```
+
+3. **Eredmények ellenőrzése:**
+   - PDF riport letöltése
+   - Excel export letöltése
+   - Email kézbesítés ellenőrzése
+
+**Várható időzítés:**
+- Adatgyűjtés (Jira + Excel): 10-20 másodperc
+- AI elemzés: 15-30 másodperc
+- Grafikonok generálása: 5-10 másodperc
+- PDF/Excel export: 5-10 másodperc
+- **Összesen: ~1-2 perc**
+
+### 7.3 Demo környezet setup
+
+**Docker Compose konfiguráció (docker-compose.demo.yml):**
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: agentize_demo
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo123
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./demo_data/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - ./demo_data/storage:/data
+
+  agentize-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://demo:demo123@postgres:5432/agentize_demo
+      REDIS_URL: redis://redis:6379/0
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+      - minio
+```
+
+**Demo adatok betöltése:**
+
+```bash
+# 1. Adatbázis inicializálás
+psql -h localhost -U demo -d agentize_demo -f demo_data/init.sql
+
+# 2. Demo meeting átirat feltöltése
+python scripts/load_demo_data.py --meeting-transcript demo_data/meeting_demo_transcript.txt
+
+# 3. Demo Jira adatok importálása
+python scripts/load_demo_data.py --jira-data demo_data/jira_demo_data.json
+
+# 4. Demo Excel fájl feltöltése
+python scripts/load_demo_data.py --excel-file demo_data/budget_demo.xlsx
+```
+
+### 7.4 Demo script végrehajtása
+
+**Teljes demo folyamat (demo_script.sh):**
+
+```bash
+#!/bin/bash
+
+echo "=== Agentize Platform Demo ==="
+echo ""
+
+echo "1. Meeting Assistant Demo"
+echo "   - Meeting feldolgozás indítása..."
+MEETING_ID=$(curl -s -X POST http://localhost:8000/api/v1/meetings/process \
+  -H "Content-Type: application/json" \
+  -d @demo_data/meeting_request.json | jq -r '.meeting_id')
+
+echo "   - Meeting ID: $MEETING_ID"
+echo "   - Várakozás feldolgozásra..."
+sleep 90
+
+echo "   - Eredmények lekérése..."
+curl -s http://localhost:8000/api/v1/meetings/$MEETING_ID | jq '.'
+
+echo ""
+echo "2. PMO Report Generator Demo"
+echo "   - Riport generálás indítása..."
+REPORT_ID=$(curl -s -X POST http://localhost:8000/api/v1/reports/generate \
+  -H "Content-Type: application/json" \
+  -d @demo_data/report_request.json | jq -r '.report_id')
+
+echo "   - Report ID: $REPORT_ID"
+echo "   - Várakozás generálásra..."
+sleep 120
+
+echo "   - Eredmények lekérése..."
+curl -s http://localhost:8000/api/v1/reports/$REPORT_ID | jq '.'
+
+echo ""
+echo "=== Demo befejezve ==="
+```
+
+---
+
 *Dokumentum verzió: 1.0*  
 *Utolsó frissítés: 2025-01-XX*
 
