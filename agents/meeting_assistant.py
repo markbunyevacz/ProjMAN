@@ -29,7 +29,7 @@ class MeetingAssistant:
             raise ValueError("OpenRouter API key is required. Set OPENROUTER_API_KEY environment variable.")
         
         self.api_endpoint = "https://openrouter.ai/api/v1/chat/completions"
-        self.model = os.getenv("OPENROUTER_MODEL", "anthropic/haiku-4.5")
+        self.model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-haiku-4.5")
         self.max_retries = 3
         
     def process_meeting(self, meeting_data: Dict) -> Dict:
@@ -173,8 +173,16 @@ Return ONLY the JSON object, no additional text."""
                 return content
                 
             except requests.exceptions.RequestException as e:
+                error_details = str(e)
+                if hasattr(e, 'response') and e.response is not None:
+                    try:
+                        error_body = e.response.json()
+                        error_details = f"{str(e)} - {error_body}"
+                    except:
+                        error_details = f"{str(e)} - Response: {e.response.text[:200]}"
+                
                 if attempt == self.max_retries - 1:
-                    raise Exception(f"API call failed after {self.max_retries} attempts: {str(e)}")
+                    raise Exception(f"API call failed after {self.max_retries} attempts: {error_details}")
                 continue
         
         raise Exception("Failed to get response from OpenRouter API")

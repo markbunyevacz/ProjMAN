@@ -1012,7 +1012,53 @@ docker push gcr.io/<project-id>/projman-ai:latest
 - Use Azure Key Vault for secrets
 
 **GCP Cloud Run:**
+
+**Option 1: Using Docker Hub image (recommended if image already pushed):**
 ```bash
+# Install gcloud CLI (if not installed)
+# Windows: Download from https://cloud.google.com/sdk/docs/install
+# Or use: choco install gcloudsdk
+# Or use: winget install Google.CloudSDK
+
+# Initialize gcloud (first time only)
+gcloud init
+
+# Set project
+gcloud config set project YOUR_PROJECT_ID
+
+# Deploy from Docker Hub
+gcloud run deploy projman-ai \
+  --image docker.io/mbunyevacz/projman-ai:latest \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-secrets="OPENROUTER_API_KEY=openrouter-key:latest" \
+  --set-env-vars="OPENROUTER_MODEL=anthropic/haiku-4.5"
+```
+
+**Option 2: Using Google Cloud Console (Web UI):**
+1. Go to https://console.cloud.google.com/run
+2. Click "Create Service"
+3. Select "Deploy one revision from an existing container image"
+4. Image URL: `docker.io/mbunyevacz/projman-ai:latest`
+5. Service name: `projman-ai`
+6. Region: `us-central1` (or your preferred region)
+7. Under "Container, Networking, Security":
+   - Set environment variables:
+     - `OPENROUTER_MODEL=anthropic/haiku-4.5`
+   - Add secret: `OPENROUTER_API_KEY` (create secret first in Secret Manager)
+8. Click "Create"
+
+**Option 3: Using GCR (Google Container Registry):**
+```bash
+# Configure Docker for GCR
+gcloud auth configure-docker
+
+# Tag and push to GCR
+docker tag projman-ai:latest gcr.io/<project-id>/projman-ai:latest
+docker push gcr.io/<project-id>/projman-ai:latest
+
+# Deploy from GCR
 gcloud run deploy projman-ai \
   --image gcr.io/<project-id>/projman-ai:latest \
   --platform managed \
