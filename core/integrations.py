@@ -128,6 +128,52 @@ class JiraIntegration:
             except Exception as exc:
                 logger.warning(f"Failed to fetch Jira project {key}: {exc}")
         return projects
+    
+    def list_projects(self, search: Optional[str] = None) -> List[Dict]:
+        """
+        List all accessible Jira projects
+        
+        Args:
+            search: Optional search term to filter projects
+            
+        Returns:
+            List of project dictionaries with key, name, lead, projectType
+        """
+        if not self.api_token:
+            logger.warning("Jira API token not configured. Cannot list projects.")
+            return []
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_token}",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            url = f"{self.jira_url}/rest/api/3/project/search"
+            params = {"maxResults": 100}
+            if search:
+                params["query"] = search
+            
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            projects = []
+            for project in data.get("values", []):
+                projects.append({
+                    "key": project.get("key"),
+                    "name": project.get("name"),
+                    "lead": project.get("lead", {}).get("displayName") if project.get("lead") else None,
+                    "projectType": project.get("projectTypeKey"),
+                    "simplified": project.get("simplified", False)
+                })
+            
+            logger.info(f"Listed {len(projects)} Jira projects")
+            return projects
+            
+        except Exception as exc:
+            logger.error(f"Failed to list Jira projects: {exc}")
+            return []
 
 class EmailService:
     """SMTP email service for notifications"""

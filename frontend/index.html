@@ -214,6 +214,102 @@
             font-size: 0.85rem;
             margin-left: 0.5rem;
         }
+        
+        /* Integrations status */
+        .integrations-status {
+            background: rgba(255,255,255,0.95);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #667eea;
+        }
+        .integrations-status h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .integration-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .integration-item:last-child {
+            border-bottom: none;
+        }
+        .integration-name {
+            font-weight: 600;
+            color: #333;
+        }
+        .integration-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+        .integration-status.configured {
+            background: #4caf50;
+            color: white;
+        }
+        .integration-status.not-configured {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .field-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+        .field-warning a {
+            color: #667eea;
+            text-decoration: underline;
+            margin-left: 0.5rem;
+        }
+        
+        .warnings {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .warning-item {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .warning-item.error {
+            background: #fee;
+            border-left: 4px solid #f44;
+            color: #c00;
+        }
+        .warning-item.warning {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            color: #856404;
+        }
+        .warning-item.info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            color: #0d47a1;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .info-box p {
+            margin: 0.5rem 0;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -221,6 +317,27 @@
         <div class="header">
             <h1>🤖 ProjMAN AI Agents</h1>
             <p>Meeting Assistant & PMO Report Generator - Demo</p>
+        </div>
+        
+        <!-- Integrations Status -->
+        <div class="integrations-status" id="integrationsStatus">
+            <h3>🔌 Integrációk állapota</h3>
+            <div class="integration-item" data-integration="jira">
+                <span class="integration-name">Jira</span>
+                <span class="integration-status" data-status="checking">Ellenőrzés...</span>
+            </div>
+            <div class="integration-item" data-integration="email">
+                <span class="integration-name">Email (SMTP)</span>
+                <span class="integration-status" data-status="checking">Ellenőrzés...</span>
+            </div>
+            <div class="integration-item" data-integration="teams">
+                <span class="integration-name">Microsoft Teams</span>
+                <span class="integration-status" data-status="checking">Ellenőrzés...</span>
+            </div>
+            <div class="integration-item" data-integration="database">
+                <span class="integration-name">Database</span>
+                <span class="integration-status" data-status="checking">Ellenőrzés...</span>
+            </div>
         </div>
         
         <div class="cards">
@@ -273,6 +390,19 @@ Nagy Anna: Értem, ma elkezdem.</textarea>
                     <option value="quarterly">Quarterly</option>
                 </select>
                 
+                <label for="jiraProjects">Jira Projects (optional):</label>
+                <input type="text" id="jiraProjects" placeholder="PROJ-1, PROJ-2" />
+                <div class="field-warning" id="jiraWarning" style="display: none;">
+                    ⚠️ Jira integráció nincs beállítva. Demo adatok lesznek használva.
+                    <a href="#" onclick="showIntegrationHelp('jira'); return false;">Beállítási útmutató</a>
+                </div>
+                
+                <label for="excelFiles">Excel Files (optional):</label>
+                <input type="file" id="excelFiles" multiple accept=".xlsx,.xls" />
+                <div class="field-warning" id="excelWarning" style="display: none;">
+                    ⚠️ Excel fájl feldolgozás még nincs implementálva.
+                </div>
+                
                 <button class="btn" onclick="generateReport()">
                     📈 Generate Report
                 </button>
@@ -304,6 +434,70 @@ Nagy Anna: Értem, ma elkezdem.</textarea>
     <script>
         const API_BASE_URL = 'http://localhost:8000';
         
+        async function checkIntegrationsStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/integrations/status`);
+                const status = await response.json();
+                updateIntegrationStatus('jira', status.jira);
+                updateIntegrationStatus('email', status.email);
+                updateIntegrationStatus('teams', status.teams);
+                updateIntegrationStatus('database', status.database);
+                updateFormWarnings(status);
+            } catch (error) {
+                console.error('Failed to fetch integrations status', error);
+            }
+        }
+
+        function updateIntegrationStatus(integration, status) {
+            const element = document.querySelector(`[data-integration="${integration}"] .integration-status`);
+            if (!element) return;
+            if (status && status.configured) {
+                element.textContent = '✅ Konfigurálva';
+                element.className = 'integration-status configured';
+            } else {
+                element.textContent = '⚠️ Nincs konfigurálva';
+                element.className = 'integration-status not-configured';
+            }
+        }
+
+        function updateFormWarnings(status) {
+            const jiraWarning = document.getElementById('jiraWarning');
+            const jiraInput = document.getElementById('jiraProjects');
+            if (jiraWarning && jiraInput) {
+                jiraInput.addEventListener('input', () => {
+                    if (jiraInput.value && !(status && status.jira && status.jira.configured)) {
+                        jiraWarning.style.display = 'block';
+                    } else {
+                        jiraWarning.style.display = 'none';
+                    }
+                });
+                // Initial state
+                if (!(status && status.jira && status.jira.configured)) {
+                    jiraWarning.style.display = 'block';
+                }
+            }
+            const excelWarning = document.getElementById('excelWarning');
+            const excelInput = document.getElementById('excelFiles');
+            if (excelWarning && excelInput) {
+                excelInput.addEventListener('change', () => {
+                    if (excelInput.files.length > 0) {
+                        excelWarning.style.display = 'block';
+                    } else {
+                        excelWarning.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        function showIntegrationHelp(which) {
+            const guides = {
+                jira: 'Jira beállítás: Állítsd be a JIRA_URL és JIRA_API_TOKEN változókat a .env-ben, majd indítsd újra a szervert.',
+                email: 'Email (SMTP) beállítás: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD szükséges a .env-ben.',
+                teams: 'Teams beállítás: TEAMS_CLIENT_ID, TEAMS_CLIENT_SECRET, TEAMS_TENANT_ID szükséges a .env-ben.'
+            };
+            alert(guides[which] || 'Lásd az IMPLEMENTATION_GUIDE.md dokumentumot a részletekért.');
+        }
+
         async function processMeeting() {
             const btn = event.target;
             const loading = document.getElementById('meetingLoading');
@@ -365,6 +559,14 @@ Nagy Anna: Értem, ma elkezdem.</textarea>
             const periodStart = document.getElementById('reportPeriodStart').value;
             const periodEnd = document.getElementById('reportPeriodEnd').value;
             const reportType = document.getElementById('reportType').value;
+            const jiraProjectsInput = document.getElementById('jiraProjects');
+            const jiraProjects = jiraProjectsInput && jiraProjectsInput.value
+                ? jiraProjectsInput.value.split(',').map(s => s.trim()).filter(Boolean)
+                : [];
+            const excelFilesInput = document.getElementById('excelFiles');
+            const excelFiles = excelFilesInput && excelFilesInput.files
+                ? Array.from(excelFilesInput.files).map(f => f.name)
+                : [];
             
             // Show loading
             btn.disabled = true;
@@ -381,8 +583,8 @@ Nagy Anna: Értem, ma elkezdem.</textarea>
                         report_type: reportType,
                         period_start: periodStart,
                         period_end: periodEnd,
-                        jira_projects: ['PROJ-1', 'PROJ-2'],
-                        excel_files: [],
+                        jira_projects: jiraProjects,
+                        excel_files: excelFiles,
                         recipients: ['executive@demo.com']
                     })
                 });
@@ -407,12 +609,43 @@ Nagy Anna: Értem, ma elkezdem.</textarea>
             
             let html = `<h3>${message}</h3>`;
             
+            // Warnings from API
+            if (data && data.warnings && data.warnings.length > 0) {
+                html += `<div class="warnings">`;
+                data.warnings.forEach(warning => {
+                    const icon = warning.severity === 'error' ? '❌' : (warning.severity === 'warning' ? '⚠️' : 'ℹ️');
+                    const fallbackBadge = warning.fallback ? '<span class="badge" style="background: #ff9800;">FALLBACK</span>' : '';
+                    html += `<div class="warning-item ${warning.severity}">${icon} ${warning.message} ${fallbackBadge}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            // Info box
+            if (data && data.info) {
+                html += `<div class="info-box">`;
+                if (data.info.data_source) {
+                    html += `<p><strong>Adatforrás:</strong> ${data.info.data_source}</p>`;
+                }
+                if (typeof data.info.projects_count === 'number') {
+                    html += `<p><strong>Projektek száma:</strong> ${data.info.projects_count}</p>`;
+                }
+                if (data.info.integrations_used && data.info.integrations_used.length > 0) {
+                    html += `<p><strong>Használt integrációk:</strong> ${data.info.integrations_used.join(', ')}</p>`;
+                }
+                html += `</div>`;
+            }
+
             if (data) {
                 html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
             }
             
             element.innerHTML = html;
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkIntegrationsStatus();
+            setInterval(checkIntegrationsStatus, 30000);
+        });
     </script>
 </body>
 </html>
